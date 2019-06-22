@@ -11,6 +11,7 @@ class Encoder(nn.Module):
         self.word_lstm = nn.LSTM(word_latent_dim, msg_latent_dim, num_layers=4, dropout=1/3)
         self.name_msg_fusion = nn.Bilinear(name_latent_dim, msg_latent_dim, msg_latent_dim)
         self.msg_lstm = nn.LSTM(msg_latent_dim, convo_latent_dim, num_layers=4, dropout=1/2)
+        self.state = None
 
     def forward(self, convo):
         char_embed = [(name, [self.char_embedding(word) for word in msg]) for name, msg in convo]
