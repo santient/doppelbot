@@ -35,10 +35,16 @@ class Generator(nn.Module):
         self.reset()
 
     def reset(self):
-        self.word_out = None
-        self.word_state = None
+        self.reset_char()
+        self.reset_word()
+
+    def reset_char(self):
         self.char_out = None
         self.char_state = None
+
+    def reset_word(self):
+        self.word_out = None
+        self.word_state = None
 
     def forward(self, encoded):
         if self.char_out is None:
@@ -48,7 +54,7 @@ class Generator(nn.Module):
             self.char_state = None
         self.char_out, self.char_state = self.char_lstm(self.char_out, self.char_state)
         return self.softmax(self.char_proj(self.char_out[-1]))
-        # TODO use below code in training and generation
+        # TODO use below code in generation
         # if self.train:
         #     pass  # TODO
         # else:
@@ -79,6 +85,7 @@ class Chatbot(nn.Module):
         self.generator.reset()
 
     def forward(self, convo=None, encoded=None):
+        # TODO deprecate
         if convo is not None:
             for msg in convo:
                 encoded = self.encoder(msg)

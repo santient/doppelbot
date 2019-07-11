@@ -32,7 +32,7 @@ class ConversationDataset(Dataset):
             msg.append([CHARS.index("<EOM>")])
             cnv.append([torch.tensor(wrd, dtype=torch.long, device=self.device).unsqueeze(0) for wrd in msg])
         X = cnv[:-1]
-        Y = torch.cat(list(flatten(cnv[-1])), dim=-1)[0]
+        Y = torch.cat(list(flatten(cnv[-1])), dim=-1)
         return X, Y
 
 def unicode_to_ascii(s):
