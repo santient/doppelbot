@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class Encoder(nn.Module):
     def __init__(self, num_chars, char_latent_dim, word_latent_dim, msg_latent_dim):
-        super()
+        super(Encoder, self).__init__()
         self.char_embedding = nn.Embedding(num_chars, char_latent_dim)
         self.char_lstm = nn.LSTM(char_latent_dim, word_latent_dim, num_layers=4, dropout=1/4)
         self.word_lstm = nn.LSTM(word_latent_dim, msg_latent_dim, num_layers=4, dropout=1/3)
@@ -17,8 +17,8 @@ class Encoder(nn.Module):
         self.context = None
 
     def forward(self, msg):
-        char_embed = [self.char_embedding(word) for word in msg]
-        encoded_words = [(name, torch.stack([self.char_lstm(word)[-1] for word in msg])) for name, msg in char_embed]
+        char_embed = [self.char_embedding(word).transpose(0, 1) for word in msg]
+        encoded_words = torch.stack([self.char_lstm(word)[0][-1] for word in char_embed])
         encoded_msg, self.context = self.word_lstm(encoded_words, self.context)
         # encoded_msg = [(name, self.word_lstm(msg)[-1]) for name, msg in encoded_words]
         # encoded_msg_fusion = torch.stack([self.name_msg_fusion(name, msg) for name, msg in encoded_msg])
@@ -26,10 +26,11 @@ class Encoder(nn.Module):
         return encoded_msg
 
 class Generator(nn.Module):
-    def __init__(self, char_latent_dim, word_latent_dim, msg_latent_dim):
-        super()
+    def __init__(self, num_chars, char_latent_dim, word_latent_dim, msg_latent_dim):
+        super(Generator, self).__init__()
         self.word_lstm = nn.LSTM(msg_latent_dim, word_latent_dim, num_layers=4)
         self.char_lstm = nn.LSTM(word_latent_dim, char_latent_dim, num_layers=4)
+        self.char_proj = nn.Linear(char_latent_dim, num_chars)
         self.softmax = nn.Softmax()
         self.reset()
 
@@ -45,8 +46,8 @@ class Generator(nn.Module):
             self.word_out, self.word_state = self.word_lstm(encoded, self.word_state)
             self.char_out = self.word_out
             self.char_state = None
-        self.char_out = self.char_lstm(self.char_out, self.char_state)
-        return self.char_out
+        self.char_out, self.char_state = self.char_lstm(self.char_out, self.char_state)
+        return self.softmax(self.char_proj(self.char_out[-1]))
         # TODO use below code in training and generation
         # if self.train:
         #     pass  # TODO
@@ -69,13 +70,18 @@ class Generator(nn.Module):
 
 class Chatbot(nn.Module):
     def __init__(self, num_chars, char_latent_dim, word_latent_dim, msg_latent_dim):
-        super()
+        super(Chatbot, self).__init__()
         self.encoder = Encoder(num_chars, char_latent_dim, word_latent_dim, msg_latent_dim)
-        self.generator = Generator(char_latent_dim, word_latent_dim, msg_latent_dim)
+        self.generator = Generator(num_chars, char_latent_dim, word_latent_dim, msg_latent_dim)
+
+    def reset(self):
+        self.encoder.reset()
+        self.generator.reset()
 
     def forward(self, convo=None, encoded=None):
         if convo is not None:
-            encoded = self.encoder(convo)
+            for msg in convo:
+                encoded = self.encoder(msg)
         if encoded is not None:
             return self.generator(encoded)
         else:
