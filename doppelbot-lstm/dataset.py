@@ -2,7 +2,6 @@ import re
 import string
 import unicodedata
 import torch
-import tqdm
 from torch.utils.data import Dataset
 
 
