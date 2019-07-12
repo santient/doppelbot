@@ -11,7 +11,7 @@ def to_chars(idxs):
 def generate():
     cudnn.benchmark = True
     device = torch.device("cuda:0")
-    chatbot = model.Chatbot(len(dataset.CHARS), 16, 64, 256).to(device)
+    chatbot = model.Chatbot(len(dataset.CHARS), 64, 256, 1024).to(device)
     chatbot.load_state_dict(torch.load("/home/santiago/Projects/DoppelBot/lstm/checkpoints/model_001.pth"))
 
     # generation loop

@@ -9,7 +9,7 @@ def train():
     cudnn.benchmark = True
     device = torch.device("cuda:0")
     chatbot = model.Chatbot(len(dataset.CHARS), 64, 256, 1024).to(device)
-    opt = torch.optim.Adam(chatbot.parameters(), lr=1e-4)
+    opt = torch.optim.Adam(chatbot.parameters(), lr=1e-3)
     loss_fn = torch.nn.CrossEntropyLoss().to(device)
     dset = dataset.ConversationDataset("/home/santiago/Data/daily_dialog/train/dialogues_train.txt", 2, device)
 
