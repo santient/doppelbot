@@ -64,3 +64,14 @@ def flatten(container):
                 yield j
         else:
             yield i
+
+def hierarchy(chars):
+    msg = []
+    for char in chars:
+        char = char[0]
+        if CHARS[char] == "<SOM>":
+            msg.append([])
+        elif CHARS[char] == "<SOW>":
+            msg[-1].append([])
+        msg[-1][-1].append(char)
+    return msg

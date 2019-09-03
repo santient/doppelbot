@@ -28,22 +28,25 @@ def train():
             assert Y.shape[1] > 0
             for msg in X:
                 encoded = chatbot.encoder(msg)
-            chatbot.encoder.reset()
-            generated = []
-            for char in Y[0].tolist():
-                generated.append(chatbot.generator(encoded))
-                if dataset.CHARS[char] == "<EOW>":
-                    chatbot.generator.reset_char()
-                elif dataset.CHARS[char] == "<EOM>":
-                    chatbot.generator.reset()
-            generated = torch.stack(generated, dim=1)
-            loss = loss_fn(generated[0], Y[0])
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-            chatbot.reset()
-            print("(Epoch {}/{}) (Step {}/{}) (Loss {})".format(
-                epoch, epochs, step, len(dset), loss.item()
+            context = chatbot.encoder.context
+            avg_loss = 0
+            for i in range(1, Y.shape[1] + 1):
+                chatbot.encoder.context = context
+                force = dataset.hierarchy(Y[:, :i])[0]
+                generated = chatbot.generator(encoded)
+                    generated.append(chatbot.generator(encoded))
+                    if dataset.CHARS[char] == "<EOW>":
+                        chatbot.generator.reset_char()
+                    elif dataset.CHARS[char] == "<EOM>":
+                        chatbot.generator.reset()
+                generated = torch.stack(generated, dim=1)
+                loss = loss_fn(generated[0], Y[0])
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
+                chatbot.reset()
+            print("(Epoch {}/{}) (Step {}/{}) (Average Loss {})".format(
+                epoch, epochs, step, len(dset), avg_loss.item()
             ))
         torch.save(chatbot.state_dict(), "/home/santiago/Projects/DoppelBot/lstm/checkpoints/model_{:03d}.pth".format(epoch))
         torch.save(opt.state_dict(), "/home/santiago/Projects/DoppelBot/lstm/checkpoints/opt_{:03d}.pth".format(epoch))
